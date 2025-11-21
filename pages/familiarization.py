@@ -171,25 +171,16 @@ def display_familiarization_interface(video_filename, config):
     video_playback_mode = config['settings'].get('video_playback_mode', 'loop')
 
     # Add familiarization header
-    st.info("🎯 **Familiarization Trial** - Practice rating videos. These ratings will not be saved.")
 
     current_index = st.session_state.familiarization_video_index
     total_videos = len(st.session_state.familiarization_videos)
-    st.markdown(f"**Video {current_index + 1} of {total_videos}**")
+    st.info(f"🎯 **Familiarization Trial** - **Video {current_index + 1} of {total_videos}**. These ratings will not be saved.")
 
     st.markdown("---")
 
     # Video display (no metadata or pitch for familiarization)
     video_file = os.path.join(familiarization_path, video_filename)
     display_video_with_mode(video_file, video_playback_mode)
-
-    # Action not recognized button
-    action_not_recognized = st.button(
-        "⚠️ Action not recognized", type="primary",
-        key=f"famil_not_recognized_{video_filename}",
-        help="Check this if you cannot identify or rate this action",
-        use_container_width=True
-    )
 
     st.markdown("---")
 
@@ -206,7 +197,7 @@ def display_familiarization_interface(video_filename, config):
         required = scale_config.get('required_to_proceed', True)
 
         # Display scale title and labels
-        st.markdown(f"**{title}** {'*(required)*' if required and not action_not_recognized else ''}")
+        st.markdown(f"**{title}** {'*(required)*' if required else ''}")
 
         col_low, col_scale, col_high = st.columns([1, 3, 1])
 
@@ -271,17 +262,16 @@ def display_familiarization_interface(video_filename, config):
     with col3:
         if st.button("Continue ▶️", use_container_width=True, type="primary"):
             # Validate ratings (same validation as main rating screen)
-            if not action_not_recognized:
-                # Check that all required scales have values
-                required_scales = st.session_state.required_scales
-                missing_scales = [
-                    title for title in required_scales
-                    if scale_values.get(title) is None or scale_values.get(title) == ''
-                ]
+            # Check that all required scales have values
+            required_scales = st.session_state.required_scales
+            missing_scales = [
+                title for title in required_scales
+                if scale_values.get(title) is None or scale_values.get(title) == ''
+            ]
 
-                if missing_scales:
-                    st.error(f"⚠️ Please provide ratings for all required scales: {', '.join(missing_scales)}")
-                    st.stop()
+            if missing_scales:
+                st.error(f"⚠️ Please provide ratings for all required scales: {', '.join(missing_scales)}")
+                st.stop()
 
             # Don't save rating - just move to next video
             st.session_state.familiarization_video_index += 1

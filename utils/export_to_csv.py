@@ -73,7 +73,7 @@ def export_all_data():
         print(f"Number of rated actions: {df_ratings['id'].nunique()}")
 
         # Dynamically identify scale columns
-        metadata_columns = ['user_id', 'id', 'action_not_recognized', 'file_created_at', 'filename']
+        metadata_columns = ['user_id', 'id', 'file_created_at', 'filename']
         all_columns = df_ratings.columns.tolist()
         scale_columns = [col for col in all_columns if col not in metadata_columns]
 
@@ -90,10 +90,6 @@ def export_all_data():
         for scale_col in scale_columns:
             agg_dict[f'mean_{scale_col}'] = (scale_col, 'mean')
             agg_dict[f'std_{scale_col}'] = (scale_col, 'std')
-
-        # Add mean for action_not_recognized if present
-        if 'action_not_recognized' in all_columns:
-            agg_dict['mean_action_not_recognized'] = ('action_not_recognized', 'mean')
 
         # Store mean ratings per action
         df_mean_ratings = df_ratings.groupby('id').agg(**agg_dict).round(3)

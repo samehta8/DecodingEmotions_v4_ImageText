@@ -56,8 +56,9 @@ def show_questionnaire_form(fields):
             if field_type == 'multiple_choice':
                 # Multiple choice field
                 options = field_config.get('options', [])
+                required = field_config.get('required_to_proceed', False)
                 if title:
-                    st.markdown(f"**{title}**")
+                    st.markdown(f"**{title}** {'*(required)*' if required else ''}")
 
                 selected = st.radio(
                     label=title if not title else "Select one:",
@@ -79,8 +80,11 @@ def show_questionnaire_form(fields):
                     # Get title from first field with a title
                     group_title = next((f.get('title') for f in group_fields if f.get('title')), '')
 
+                    # Check if any field in the group is required
+                    group_required = any(f.get('required_to_proceed', False) for f in group_fields)
+
                     if group_title:
-                        st.markdown(f"**{group_title}**")
+                        st.markdown(f"**{group_title}** {'*(required)*' if group_required else ''}")
 
                     # Create columns for group fields
                     cols = st.columns(len(group_fields))
@@ -120,22 +124,29 @@ def show_questionnaire_form(fields):
                 else:
                     # Single field (not grouped)
                     max_len = field_config.get('max_length', None)
+                    required = field_config.get('required_to_proceed', False)
+
+                    # Display title as bold markdown if it exists (same as multiple choice)
+                    if title:
+                        st.markdown(f"**{title}** {'*(required)*' if required else ''}")
 
                     if field_type == 'numeric':
                         value = st.number_input(
-                            label=hint_text,
+                            label=title if title else hint_text,
                             key=f"field_{field_name}",
                             min_value=0,
                             step=1,
                             value=None,
-                            placeholder=hint_text
+                            placeholder=hint_text,
+                            label_visibility="collapsed" if title else "visible"
                         )
                     else:
                         value = st.text_input(
-                            label=hint_text,
+                            label=title if title else hint_text,
                             key=f"field_{field_name}",
                             max_chars=max_len,
-                            placeholder=hint_text
+                            placeholder=hint_text,
+                            label_visibility="collapsed" if title else "visible"
                         )
 
                     # Store value
@@ -161,8 +172,23 @@ def show_questionnaire_form(fields):
 
     if next_button:
         # Validate that required fields are filled
-        # For simplicity, we'll check if user_id was generated successfully
-        if not user.user_id or user.user_id == 'unknown':
+        missing_fields = []
+
+        # Check all fields marked as required_to_proceed
+        for field_config in fields:
+            if field_config.get('required_to_proceed', False):
+                field_name = field_config.get('field_name', '')
+                field_value = user.data.get(field_name)
+                field_title = field_config.get('title', field_config.get('hint_text', field_name))
+
+                # Check if field is empty, None, or empty string
+                # For numeric fields, 0 is a valid value, so we check for None or empty string only
+                if field_value is None or field_value == '':
+                    missing_fields.append(field_title)
+
+        if missing_fields:
+            st.error(f"⚠️ Please fill in the following required fields: {', '.join(missing_fields)}")
+        elif not user.user_id or user.user_id == 'unknown':
             st.error("⚠️ Please ensure all fields are filled in correctly, especially the fields required for user ID generation.")
         else:
             # Show confirmation panel

@@ -426,14 +426,6 @@ def display_rating_interface(action_id, video_filename, config):
         video_file = os.path.join(video_path, video_filename)
         display_video_with_mode(video_file, video_playback_mode)
 
-    # Action not recognized button
-    action_not_recognized = st.button(
-        "⚠️ Action not recognized", type="primary",
-        key=f"not_recognized_{action_id}",
-        help="Check this if you cannot identify or rate this action",
-        width="stretch"
-        )
-
     st.markdown("---")
 
     # Rating scales
@@ -450,7 +442,7 @@ def display_rating_interface(action_id, video_filename, config):
         required = scale_config.get('required_to_proceed', True)
 
         # Display scale title and labels
-        st.markdown(f"**{title}** {'*(required)*' if required and not action_not_recognized else ''}")
+        st.markdown(f"**{title}** {'*(required)*' if required else ''}")
 
         col_low, col_scale, col_high = st.columns([1, 3, 1])
 
@@ -516,21 +508,19 @@ def display_rating_interface(action_id, video_filename, config):
 
     with col3:
         if st.button("Submit Rating ▶️", use_container_width=True, type="primary"):
-            # Validate ratings
-            if not action_not_recognized:
-                # Check that all required scales have values
-                required_scales = st.session_state.required_scales
-                missing_scales = [
-                    title for title in required_scales
-                    if scale_values.get(title) is None or scale_values.get(title) == ''
-                ]
+            # Validate ratings - check that all required scales have values
+            required_scales = st.session_state.required_scales
+            missing_scales = [
+                title for title in required_scales
+                if scale_values.get(title) is None or scale_values.get(title) == ''
+            ]
 
-                if missing_scales:
-                    st.error(f"⚠️ Please provide ratings for all required scales: {', '.join(missing_scales)}")
-                    st.stop()
+            if missing_scales:
+                st.error(f"⚠️ Please provide ratings for all required scales: {', '.join(missing_scales)}")
+                st.stop()
 
             # Save rating
-            if save_rating(user.user_id, action_id, scale_values, action_not_recognized):
+            if save_rating(user.user_id, action_id, scale_values):
                 st.success("✅ Rating saved successfully!")
 
                 # Move to next video

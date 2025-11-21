@@ -71,7 +71,7 @@ def save_user_data(user):
         print(f"[ERROR] CRITICAL: All storage methods failed for user {user.user_id}")
         return False
 
-def save_rating(user_id, action_id, scale_values, action_not_recognized=False):
+def save_rating(user_id, action_id, scale_values):
     """
     Save rating data based on configured storage_mode.
 
@@ -84,7 +84,6 @@ def save_rating(user_id, action_id, scale_values, action_not_recognized=False):
     - user_id: User identifier
     - action_id: Action/video identifier
     - scale_values: Dictionary of scale titles to values
-    - action_not_recognized: Boolean flag
 
     Returns:
     - True if at least one save method successful, False if all fail
@@ -92,8 +91,7 @@ def save_rating(user_id, action_id, scale_values, action_not_recognized=False):
     # Build rating data
     rating_data = {
         'user_id': user_id,
-        'id': action_id,
-        'action_not_recognized': action_not_recognized
+        'id': action_id
     }
 
     # Add each scale's value

@@ -81,7 +81,7 @@ settings:
 Define demographic and experience fields:
 - `type`: "multiple_choice", "text", or "numeric"
 - `active`: true/false to enable/disable fields
-- `required_for_user_id`: true for fields used in ID generation
+- `required_to_proceed`: true/false for mandatory fields
 
 ### Rating Scales (`config/rating_scales.yaml`)
 

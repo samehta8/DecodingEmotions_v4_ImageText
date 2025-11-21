@@ -16,7 +16,7 @@ from utils.config_loader import load_config
 
 # Page configuration
 st.set_page_config(
-    page_title="Creativity Rating App",
+    page_title="Decoding Emotions App",
     page_icon="",
     layout="wide",
     initial_sidebar_state="collapsed"
