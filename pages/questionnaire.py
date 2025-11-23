@@ -8,6 +8,14 @@ from utils.data_persistence import save_user_data, get_all_existing_user_ids
 
 def show():
     """Display the questionnaire screen."""
+    # Check if consent has been given
+    if not st.session_state.get('consent_given', False):
+        st.warning("⚠️ You must provide consent before accessing the questionnaire.")
+        if st.button("Go to Consent Page"):
+            st.session_state.page = 'consent'
+            st.rerun()
+        return
+
     user = st.session_state.user
     config = st.session_state.config
 
@@ -163,7 +171,7 @@ def show_questionnaire_form(fields):
 
     # Handle form submission
     if back_button:
-        st.session_state.page = 'login'
+        st.session_state.page = 'consent'
         st.rerun()
 
     if next_button:

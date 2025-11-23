@@ -241,13 +241,16 @@ def initialize_video_player(config):
     """Initialize video player state - load videos, metadata, and rating scales."""
     user = st.session_state.user
 
-    # Load rating scales
-    st.session_state.rating_scales = load_rating_scales(config)
+    # Load rating scales (now returns dict with scales, groups, and requirements)
+    rating_data = load_rating_scales(config)
+    st.session_state.rating_scales = rating_data['scales']
+    st.session_state.rating_groups = rating_data['groups']
+    st.session_state.group_requirements = rating_data['group_requirements']
 
-    # Track which scales are required
+    # Track which scales are required individually (not in a group)
     st.session_state.required_scales = [
         scale.get('title') for scale in st.session_state.rating_scales
-        if scale.get('required_to_proceed', True)
+        if scale.get('required_to_proceed', True) and not scale.get('group')
     ]
 
     # Get configuration
@@ -420,15 +423,13 @@ def display_rating_interface(action_id, video_filename, config):
 
     with col3:
         if st.button("Submit Rating ▶️", use_container_width=True, type="primary"):
-            # Validate ratings - check that all required scales have values
-            required_scales = st.session_state.required_scales
-            missing_scales = [
-                title for title in required_scales
-                if scale_values.get(title) is None or scale_values.get(title) == ''
-            ]
+            # Validate ratings
+            validation_errors = _validate_ratings(scale_values)
 
-            if missing_scales:
-                st.error(f"⚠️ Please provide ratings for all required scales: {', '.join(missing_scales)}")
+            if validation_errors:
+                st.error("⚠️ Please complete the required ratings:")
+                for error in validation_errors:
+                    st.warning(error)
                 st.stop()
 
             # Save rating
@@ -443,6 +444,82 @@ def display_rating_interface(action_id, video_filename, config):
                 st.rerun()
             else:
                 st.error("❌ Failed to save rating. Please try again.")
+
+def _validate_ratings(scale_values):
+    """
+    Validate that all required ratings are provided.
+    Checks both individual required scales and group requirements.
+
+    Returns:
+        List of error messages (empty if validation passes)
+    """
+    errors = []
+
+    # Check individually required scales (not in groups)
+    required_scales = st.session_state.get('required_scales', [])
+    missing_scales = [
+        title for title in required_scales
+        if scale_values.get(title) is None or scale_values.get(title) == ''
+    ]
+
+    if missing_scales:
+        errors.append(f"Required fields: {', '.join(missing_scales)}")
+
+    # Check group requirements
+    group_requirements = st.session_state.get('group_requirements', {})
+    rating_scales = st.session_state.get('rating_scales', [])
+
+    for group_id, required_count in group_requirements.items():
+        # Find all scales in this group
+        group_scales = [
+            scale for scale in rating_scales
+            if scale.get('group') == group_id
+        ]
+
+        # Count how many scales in this group have been changed
+        changed_count = 0
+        for scale in group_scales:
+            title = scale.get('title')
+            value = scale_values.get(title)
+
+            # Check if value exists and is not empty
+            if value is None or value == '':
+                continue
+
+            # For sliders, check if value has been changed from initial position
+            if scale.get('type') == 'slider':
+                initial_state = scale.get('initial_state', 'low')
+                slider_min = scale.get('slider_min', 0)
+                slider_max = scale.get('slider_max', 100)
+
+                # Calculate initial value based on initial_state
+                if initial_state == 'low':
+                    initial_value = slider_min
+                elif initial_state == 'high':
+                    initial_value = slider_max
+                else:  # center
+                    initial_value = (slider_min + slider_max) / 2
+
+                # Count as changed if value is different from initial
+                if value != initial_value:
+                    changed_count += 1
+            else:
+                # For discrete and text types, any non-empty value counts as changed
+                changed_count += 1
+
+        if changed_count < required_count:
+            # Find group title for error message
+            group_title = next(
+                (g.get('title', group_id) for g in st.session_state.get('rating_groups', [])
+                 if g.get('id') == group_id),
+                group_id
+            )
+            errors.append(
+                f"Group '{group_title}': Please rate at least {required_count} emotions "
+                f"(currently {changed_count}/{required_count})"
+            )
+
+    return errors
 
 def show_completion_message():
     """Display message when all videos have been rated."""

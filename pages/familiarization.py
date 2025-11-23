@@ -123,13 +123,16 @@ def show():
 
 def initialize_familiarization(config):
     """Initialize familiarization state - load videos and rating scales."""
-    # Load rating scales
-    st.session_state.rating_scales = load_rating_scales(config)
+    # Load rating scales (now returns dict with scales, groups, and requirements)
+    rating_data = load_rating_scales(config)
+    st.session_state.rating_scales = rating_data['scales']
+    st.session_state.rating_groups = rating_data['groups']
+    st.session_state.group_requirements = rating_data['group_requirements']
 
-    # Track which scales are required
+    # Track which scales are required individually (not in a group)
     st.session_state.required_scales = [
         scale.get('title') for scale in st.session_state.rating_scales
-        if scale.get('required_to_proceed', True)
+        if scale.get('required_to_proceed', True) and not scale.get('group')
     ]
 
     # Get video source from config

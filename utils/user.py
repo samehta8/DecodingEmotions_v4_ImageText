@@ -79,7 +79,9 @@ class User:
     def to_dict(self):
         """Convert user data to dictionary for JSON export."""
         from datetime import datetime
-        return {
+        import streamlit as st
+
+        user_dict = {
             'user_id': self.user_id,
             'gender': self.gender,
             'age': self.age,
@@ -91,3 +93,10 @@ class User:
             'saved_at': datetime.now().isoformat(timespec='seconds'),
             **self.data
         }
+
+        # Add consent information if available in session state
+        if st.session_state.get('consent_given', False):
+            user_dict['consent_given'] = True
+            user_dict['consent_timestamp'] = datetime.now().isoformat(timespec='seconds')
+
+        return user_dict

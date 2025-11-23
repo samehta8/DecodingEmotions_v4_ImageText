@@ -76,6 +76,10 @@ elif current_page == 'login':
     import pages.login as login
     login.show()
 
+elif current_page == 'consent':
+    import pages.consent as consent
+    consent.show()
+
 elif current_page == 'questionnaire':
     import pages.questionnaire as questionnaire
     questionnaire.show()

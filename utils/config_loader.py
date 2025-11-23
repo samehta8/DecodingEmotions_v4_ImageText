@@ -35,7 +35,14 @@ def load_questionnaire_fields(config):
     return [field for field in all_fields if field.get('active', False)]
 
 def load_rating_scales(config):
-    """Load rating scales from configured file."""
+    """
+    Load rating scales and groups from configured file.
+
+    Returns a dictionary with:
+    - 'scales': list of active rating scales
+    - 'groups': list of rating scale groups
+    - 'group_requirements': dict mapping group_id to required number of ratings
+    """
     rating_scales_file = config['settings'].get(
         'rating_scales_file',
         'config/rating_scales.yaml'
@@ -43,12 +50,69 @@ def load_rating_scales(config):
 
     if not os.path.exists(rating_scales_file):
         print(f"[WARNING] {rating_scales_file} not found, using empty rating scales")
-        return []
+        return {'scales': [], 'groups': [], 'group_requirements': {}}
 
     with open(rating_scales_file, 'r') as file:
-        all_scales = yaml.safe_load(file)
+        data = yaml.safe_load(file)
+        if data is None:
+            return {'scales': [], 'groups': [], 'group_requirements': {}}
+
+    # Check if this is the old format (list of scales) or new format (dict with groups and scales)
+    if isinstance(data, list):
+        # Old format: data is directly a list of scales
+        print("[INFO] Using legacy rating scales format (list of scales)")
+        all_scales = data
+        groups = []
+        group_requirements = {}
+    else:
+        # New format: data is a dict with 'groups' and 'scales' keys
+        # Parse groups
+        groups = data.get('groups', [])
+        group_requirements = {}
+
+        for group in groups:
+            group_id = group.get('id')
+            number_of_ratings = group.get('number_of_ratings', 0)
+            if group_id:
+                group_requirements[group_id] = number_of_ratings
+
+        # Parse scales
+        all_scales = data.get('scales', [])
         if all_scales is None:
-            return []
+            all_scales = []
 
     # Filter only active scales
-    return [scale for scale in all_scales if scale.get('active', False)]
+    active_scales = [scale for scale in all_scales if scale.get('active', False)]
+
+    # Validate group requirements
+    _validate_group_requirements(active_scales, groups, group_requirements)
+
+    return {
+        'scales': active_scales,
+        'groups': groups,
+        'group_requirements': group_requirements
+    }
+
+def _validate_group_requirements(scales, groups, group_requirements):
+    """
+    Validate that group requirements are reasonable.
+    Issues warnings if number_of_ratings > number of scales in group.
+    """
+    # Count scales per group
+    group_scale_counts = {}
+    for scale in scales:
+        group_id = scale.get('group')
+        if group_id:
+            group_scale_counts[group_id] = group_scale_counts.get(group_id, 0) + 1
+
+    # Check each group
+    for group_id, required_ratings in group_requirements.items():
+        scale_count = group_scale_counts.get(group_id, 0)
+
+        if scale_count == 0:
+            print(f"[WARNING] Rating scale group '{group_id}' has no active scales assigned to it")
+        elif required_ratings > scale_count:
+            group_title = next((g.get('title', group_id) for g in groups if g.get('id') == group_id), group_id)
+            print(f"[WARNING] Rating scale group '{group_title}' (id: {group_id}) requires {required_ratings} ratings but only has {scale_count} scales. All scales in this group will be required.")
+            # Update to require all scales
+            group_requirements[group_id] = scale_count

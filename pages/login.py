@@ -82,6 +82,6 @@ def show():
 
                     st.rerun()
             else:
-                # New user - go to questionnaire
-                st.session_state.page = 'questionnaire'
+                # New user - go to consent page
+                st.session_state.page = 'consent'
                 st.rerun()
