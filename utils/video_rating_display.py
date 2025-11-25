@@ -119,7 +119,7 @@ def display_video_rating_interface(
 
     else:
         # Show video and rating scales side by side
-        col_video, col_rating_scales = st.columns([55, 45])
+        col_video, col_rating_scales = st.columns([50, 50])
 
         with col_video:
             video_file = os.path.join(video_path, video_filename)
