@@ -106,6 +106,10 @@ elif current_page == 'videoplayer':
     import pages.videoplayer as videoplayer
     videoplayer.show()
 
+elif current_page == 'completion':
+    import pages.completion as completion
+    completion.show()
+
 else:
     st.error(f"Unknown page: {current_page}")
     st.button("Go to Welcome", on_click=lambda: navigate_to('welcome'))

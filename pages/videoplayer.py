@@ -248,7 +248,8 @@ def show():
 
     # Check if there are videos to rate
     if not st.session_state.get('videos_to_rate'):
-        show_completion_message()
+        st.session_state.page = 'completion'
+        st.rerun()
         return
 
     # Load current video
@@ -256,7 +257,8 @@ def show():
     videos = st.session_state.videos_to_rate
 
     if current_video_index >= len(videos):
-        show_completion_message()
+        st.session_state.page = 'completion'
+        st.rerun()
         return
 
     current_video = videos[current_video_index]
@@ -388,6 +390,13 @@ def display_rating_screen(action_id, video_filename, config):
             if save_rating(user.user_id, action_id, scale_values):
                 st.success("✅ Rating saved successfully!")
 
+                # Track win/loss prediction for this session (for completion screen)
+                win_loss_prediction = scale_values.get('Win or Loss')
+                if win_loss_prediction is not None:
+                    if 'session_ratings' not in st.session_state:
+                        st.session_state.session_ratings = {}
+                    st.session_state.session_ratings[action_id] = win_loss_prediction
+
                 # Move to next video
                 st.session_state.current_video_index += 1
                 st.session_state.current_screen = 'video'  # Reset to video screen for next video
@@ -406,6 +415,11 @@ def display_rating_screen(action_id, video_filename, config):
 def initialize_video_player(config):
     """Initialize video player state - load videos, metadata, and rating scales."""
     user = st.session_state.user
+
+    # Initialize session ratings tracker (for completion screen)
+    # Stores {video_id: win_or_loss_prediction} for current session only
+    if 'session_ratings' not in st.session_state:
+        st.session_state.session_ratings = {}
 
     # Load rating scales (now returns dict with scales, groups, and requirements)
     rating_data = load_rating_scales(config)
@@ -448,34 +462,38 @@ def initialize_video_player(config):
         print(f"[WARNING] Error filtering fully-rated videos: {e}")
         videos_to_rate = unrated_videos
 
-    # Load metadata FIRST (before sampling) to enable stratification
-    df_metadata = pd.DataFrame()
+    # Load FULL metadata (keep all rows for completion screen)
+    df_metadata_full = pd.DataFrame()
+    df_metadata_filtered = pd.DataFrame()
     try:
-        if videos_to_rate:
-            # Get event IDs from video filenames
-            event_ids = [v.replace('.mp4', '') for v in videos_to_rate]
+        # Detect file type and load metadata accordingly
+        if metadata_path.endswith('.duckdb'):
+            # Load from DuckDB (lazy import to avoid binary conflicts on Streamlit Cloud)
+            import duckdb
+            conn = duckdb.connect(metadata_path, read_only=True)
+            df_metadata_full = conn.execute("SELECT * FROM events").fetchdf()
+            conn.close()
+        elif metadata_path.endswith('.csv'):
+            # Load FULL CSV (don't filter yet - needed for completion screen)
+            df_metadata_full = pd.read_csv(metadata_path)
+        else:
+            print(f"[WARNING] Unsupported metadata file type: {metadata_path}")
+            df_metadata_full = pd.DataFrame()
 
-            # Detect file type and load metadata accordingly
-            if metadata_path.endswith('.duckdb'):
-                # Load from DuckDB (lazy import to avoid binary conflicts on Streamlit Cloud)
-                import duckdb
-                conn = duckdb.connect(metadata_path, read_only=True)
-                event_id_str = ', '.join(f"'{event_id}'" for event_id in event_ids)
-                query = f"SELECT * FROM events WHERE id IN ({event_id_str})"
-                df_metadata = conn.execute(query).fetchdf()
-                conn.close()
-            elif metadata_path.endswith('.csv'):
-                # Load from CSV
-                df_full = pd.read_csv(metadata_path)
-                df_metadata = df_full[df_full['id'].isin(event_ids)]
-            else:
-                print(f"[WARNING] Unsupported metadata file type: {metadata_path}")
-                df_metadata = pd.DataFrame()
+        # Create filtered version for stratification (only videos available to rate)
+        if videos_to_rate and not df_metadata_full.empty:
+            event_ids = [v.replace('.mp4', '') for v in videos_to_rate]
+            df_metadata_filtered = df_metadata_full[df_metadata_full['id'].isin(event_ids)]
+        else:
+            df_metadata_filtered = df_metadata_full.copy()
+
     except Exception as e:
         print(f"[WARNING] Failed to load metadata: {e}")
-        df_metadata = pd.DataFrame()
+        df_metadata_full = pd.DataFrame()
+        df_metadata_filtered = pd.DataFrame()
 
     # Apply stratified sampling or simple random sampling
+    # Use FILTERED metadata for stratification (only available videos)
     number_of_videos = config['settings'].get('number_of_videos', None)
     strat_config = config['settings'].get('variables_for_stratification', [])
 
@@ -484,7 +502,7 @@ def initialize_video_player(config):
         print(f"[INFO] Applying stratified sampling with {len(strat_config)} variable(s)")
         videos_to_rate = stratified_sample_videos(
             videos_to_rate,
-            df_metadata,
+            df_metadata_filtered,
             number_of_videos,
             strat_config
         )
@@ -499,12 +517,8 @@ def initialize_video_player(config):
     st.session_state.current_video_index = 0
     # Note: video_path or gdrive_folder_id already set above based on video_source
 
-    # Filter metadata to only selected videos
-    if not df_metadata.empty:
-        selected_event_ids = [v.replace('.mp4', '') for v in videos_to_rate]
-        df_metadata = df_metadata[df_metadata['id'].isin(selected_event_ids)]
-
-    st.session_state.metadata = df_metadata
+    # Store FULL metadata (all rows from CSV) - needed for completion screen
+    st.session_state.metadata = df_metadata_full
     st.session_state.video_initialized = True
 
 def display_rating_interface(action_id, video_filename, config):
@@ -557,6 +571,13 @@ def display_rating_interface(action_id, video_filename, config):
             # Save rating
             if save_rating(user.user_id, action_id, scale_values):
                 st.success("✅ Rating saved successfully!")
+
+                # Track win/loss prediction for this session (for completion screen)
+                win_loss_prediction = scale_values.get('Win or Loss')
+                if win_loss_prediction is not None:
+                    if 'session_ratings' not in st.session_state:
+                        st.session_state.session_ratings = {}
+                    st.session_state.session_ratings[action_id] = win_loss_prediction
 
                 # Move to next video
                 st.session_state.current_video_index += 1
@@ -644,26 +665,3 @@ def _validate_ratings(scale_values):
                 )
 
     return errors
-
-def show_completion_message():
-    """Display message when all videos have been rated."""
-    st.title("🎉 All Done!")
-
-    st.success("""
-    ### Thank you for your participation!
-
-    You have completed rating all available videos.
-
-    Your responses have been saved and will help us understand creativity assessment in soccer.
-    """)
-
-    st.markdown("---")
-
-    col1, col2, col3 = st.columns([1, 1, 1])
-
-    with col1:
-        if st.button("◀️ Back to Questionnaire", use_container_width=True):
-            st.session_state.page = 'questionnaire'
-            st.session_state.user_id_confirmed = False
-            st.session_state.video_initialized = False
-            st.rerun()

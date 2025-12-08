@@ -1,4 +1,4 @@
-id,AthleteName,Nationality,LowHighPD,Gender,OlympicParalympic,WinLose,Condition
+id,AthleteName,Nationality,LowHighPD,Gender,OlympicParalympic,WinLoss,Condition
 img_0037,Beatriz Souza,BRA,High,Female,Olympic,Win,Image_Slider
 img_0003,Shirine Boukli,FRA,High,Female,Olympic,Win,Image_Slider
 img_0018,Eteri Liparteliani,GEO,High,Female,Olympic,Loss,Image_Slider

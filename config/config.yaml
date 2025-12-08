@@ -23,13 +23,13 @@ paths:
   familiarization_video_path: "data/videos_familiarization"
 
 settings:
-  min_ratings_per_video: 2
+  min_ratings_per_video: 50
   questionnaire_fields_file: "config/questionnaire_fields.yaml"  # External file for questionnaire configuration
   rating_scales_file: "config/rating_scales.yaml"  # External file for rating scales configuration
   display_metadata: false  # Show metadata (team, player, type, etc.) at top of video screen
   display_pitch: false  # Show pitch visualization next to video
   video_playback_mode: "once"  # "loop" = video repeats, "once" = plays once and cannot be restarted
-  enable_familiarization: true  # Set to false to skip all familiarization screens (pre-famil, famil, post-famil)
+  enable_familiarization: false  # Set to false to skip all familiarization screens (pre-famil, famil, post-famil)
 
   # Two-screen mode: separates video playback and rating screens
   # "combined" = video and ratings side-by-side (classic mode)
@@ -41,21 +41,21 @@ settings:
   video_width: 800
 
   # Video selection and stratification settings
-  number_of_videos: null  # Maximum videos to show per session (null = show all available)
+  number_of_videos: 3  # Maximum videos to show per session (null = show all available)
 
   # Stratified sampling configuration (optional)
   # Leave empty or comment out to use simple random sampling
   variables_for_stratification:
   # Example configuration:
-    - variable: "LowHighPD"
-      levels: ["Low", "High"]
-      proportions: [0.5, 0.5]  # Must sum to 1.0
-    - variable: "WinLose"
-      levels: ["Win", "Loss"]
-      proportions: [0.5, 0.5]
-    - variable: "OlympicParalympic"
-      levels: ["Olympic", "Paralympic"]
-      proportions: [0.5, 0.5]
+#    - variable: "LowHighPD"
+#      levels: ["Low", "High"]
+#      proportions: [0.5, 0.5]  # Must sum to 1.0
+#    - variable: "WinLoss"
+#      levels: ["Win", "Loss"]
+#      proportions: [0.5, 0.5]
+#    - variable: "OlympicParalympic"
+#      levels: ["Olympic", "Paralympic"]
+#      proportions: [0.5, 0.5]
 
   # Metadata columns to display at top of video screen
   # Each item specifies a label (display name) and column (metadata column name)
