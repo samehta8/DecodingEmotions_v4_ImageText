@@ -12,3 +12,8 @@ google-auth==2.25.2
 google-auth-oauthlib==1.2.0
 google-auth-httplib2==0.2.0
 cachetools==5.3.2
+
+# Device detection
+user-agents>=2.2.0
+ua-parser>=0.18.0
+streamlit-js-eval>=0.1.7

@@ -100,6 +100,18 @@ def save_rating(user_id, action_id, scale_values):
         key = title.lower().replace(' ', '_')
         rating_data[key] = value
 
+    # Add device information if available in session state
+    device_info = st.session_state.get('device_info', {})
+    if device_info:
+        rating_data['device_type'] = device_info.get('device_type')
+        rating_data['os'] = device_info.get('os')
+        rating_data['browser'] = device_info.get('browser')
+        rating_data['browser_version'] = device_info.get('browser_version')
+        rating_data['maxTouchPoints'] = device_info.get('maxTouchPoints')
+        rating_data['screen_width'] = device_info.get('screen_width')
+        rating_data['screen_height'] = device_info.get('screen_height')
+        rating_data['user_agent'] = device_info.get('user_agent')
+
     # Get storage mode from config
     config = st.session_state.get('config', {})
     storage_mode = config.get('settings', {}).get('storage_mode', 'both')

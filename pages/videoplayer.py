@@ -14,6 +14,7 @@ from utils.config_loader import load_rating_scales
 from utils.data_persistence import save_rating, get_rated_videos_for_user
 from utils.video_rating_display import display_video_rating_interface
 from utils.gdrive_manager import get_all_video_filenames, get_video_path
+from utils.device_detection import get_device_info_cached
 
 def stratified_sample_videos(videos_to_rate, df_metadata, number_of_videos, strat_config):
     """
@@ -420,6 +421,10 @@ def initialize_video_player(config):
     # Stores {video_id: win_or_loss_prediction} for current session only
     if 'session_ratings' not in st.session_state:
         st.session_state.session_ratings = {}
+
+    # Detect and cache device information (once per session)
+    # This will be attached to each rating submitted
+    device_info = get_device_info_cached()
 
     # Load rating scales (now returns dict with scales, groups, and requirements)
     rating_data = load_rating_scales(config)
