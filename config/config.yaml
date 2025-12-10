@@ -9,27 +9,21 @@ paths:
   video_source: "local"
 
   # Local filesystem paths (used when video_source = "local")
-  # path to external drive on Linux
-  #video_path: "/media/max/Elements/videos_events_sample"
-
-  # path to external drive on macOS
-  #video_path: "/Volumes/Elements/videos_all"
-
-  # dummy videos on localhost max
-  #video_path: "/home/max/drive/projects/3_Creativity/creativity-rating-app/videos_all/"
-  video_path: "data/videos/"
+  video_path: "data/videos/" # use for video study
+  #video_path: "data/videos_screenshots/" # use for image study
 
   # Familiarization videos (always the same 3 videos for all users)
-  familiarization_video_path: "data/videos_familiarization"
+  familiarization_video_path: "data/videos_familiarization_videos" # use for video study
+  #familiarization_video_path: "data/videos_familiarization" # use for image study
 
 settings:
-  min_ratings_per_video: 50
+  min_ratings_per_video: 40
   questionnaire_fields_file: "config/questionnaire_fields.yaml"  # External file for questionnaire configuration
   rating_scales_file: "config/rating_scales.yaml"  # External file for rating scales configuration
   display_metadata: false  # Show metadata (team, player, type, etc.) at top of video screen
   display_pitch: false  # Show pitch visualization next to video
   video_playback_mode: "once"  # "loop" = video repeats, "once" = plays once and cannot be restarted
-  enable_familiarization: false  # Set to false to skip all familiarization screens (pre-famil, famil, post-famil)
+  enable_familiarization: true  # Set to false to skip all familiarization screens (pre-famil, famil, post-famil)
 
   # Two-screen mode: separates video playback and rating screens
   # "combined" = video and ratings side-by-side (classic mode)
@@ -41,7 +35,7 @@ settings:
   video_width: 800
 
   # Video selection and stratification settings
-  number_of_videos: 3  # Maximum videos to show per session (null = show all available)
+  number_of_videos: null  # Maximum videos to show per session (null = show all available)
 
   # Stratified sampling configuration (optional)
   # Leave empty or comment out to use simple random sampling

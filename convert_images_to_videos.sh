@@ -3,16 +3,19 @@
 # ============================================================================
 # Image to Video Converter
 # ============================================================================
-# Converts images to videos by displaying the image for a configurable duration
-# followed by a black screen for a configurable duration.
+# Converts images to videos with the following structure:
+# 1. Black screen intro (configurable duration)
+# 2. Image display (configurable duration)
+# 3. Black screen ending (configurable duration)
 #
 # Requirements: FFmpeg must be installed
 # Usage: ./convert_images_to_videos.sh
 # ============================================================================
 
 # Configuration variables
+BLACK_INTRO_DURATION=0.5  # Duration of black screen at the beginning (seconds)
 IMAGE_DURATION=2          # Duration to display the image (seconds)
-BLACK_DURATION=0          # Duration to display black screen (seconds)
+BLACK_DURATION=0          # Duration to display black screen at the end (seconds)
 INPUT_FOLDER="../data_saumya/screenshots/"   # Path to folder containing input images
 OUTPUT_FOLDER="../data_saumya/videos_from_screenshots/"  # Path to folder for output videos
 
@@ -39,10 +42,11 @@ usage() {
     echo "Converts images to videos with configurable display times."
     echo ""
     echo "Configuration (edit script to change):"
-    echo "  IMAGE_DURATION: ${IMAGE_DURATION}s"
-    echo "  BLACK_DURATION: ${BLACK_DURATION}s"
-    echo "  INPUT_FOLDER:   ${INPUT_FOLDER}"
-    echo "  OUTPUT_FOLDER:  ${OUTPUT_FOLDER}"
+    echo "  BLACK_INTRO_DURATION: ${BLACK_INTRO_DURATION}s"
+    echo "  IMAGE_DURATION:       ${IMAGE_DURATION}s"
+    echo "  BLACK_DURATION:       ${BLACK_DURATION}s"
+    echo "  INPUT_FOLDER:         ${INPUT_FOLDER}"
+    echo "  OUTPUT_FOLDER:        ${OUTPUT_FOLDER}"
     echo ""
 }
 
@@ -59,8 +63,9 @@ fi
 echo -e "${BLUE}================================${NC}"
 echo -e "${BLUE}Image to Video Converter${NC}"
 echo -e "${BLUE}================================${NC}"
+echo -e "Black intro time:   ${GREEN}${BLACK_INTRO_DURATION}s${NC}"
 echo -e "Image display time: ${GREEN}${IMAGE_DURATION}s${NC}"
-echo -e "Black screen time:  ${GREEN}${BLACK_DURATION}s${NC}"
+echo -e "Black ending time:  ${GREEN}${BLACK_DURATION}s${NC}"
 echo -e "Input folder:       ${GREEN}${INPUT_FOLDER}${NC}"
 echo -e "Output folder:      ${GREEN}${OUTPUT_FOLDER}${NC}"
 echo -e "${BLUE}================================${NC}"
@@ -93,7 +98,7 @@ SUCCESSFUL=0
 FAILED=0
 
 # Calculate total duration
-TOTAL_DURATION=$((IMAGE_DURATION + BLACK_DURATION))
+TOTAL_DURATION=$(echo "$BLACK_INTRO_DURATION + $IMAGE_DURATION + $BLACK_DURATION" | bc)
 
 # Build array of image files (to avoid subshell issues with pipe)
 mapfile -t image_files < <(find "$INPUT_FOLDER" -maxdepth 1 -type f \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" -o -iname "*.bmp" -o -iname "*.tiff" -o -iname "*.webp" \) | sort)
@@ -128,14 +133,27 @@ for image_path in "${image_files[@]}"; do
     }
 
     # Create video using FFmpeg
-    # Step 1: Create video from image
-    # Step 2: Create video from black screen
-    # Step 3: Concatenate them
+    # Step 1: Create intro black screen video
+    # Step 2: Create video from image
+    # Step 3: Create ending black screen video
+    # Step 4: Concatenate them
 
     # Create temporary files for segments
+    temp_black_intro_video=$(mktemp /tmp/blk_intro_XXXXXX.mp4)
     temp_image_video=$(mktemp /tmp/img_XXXXXX.mp4)
     temp_black_video=$(mktemp /tmp/blk_XXXXXX.mp4)
     temp_concat_list=$(mktemp /tmp/concat_XXXXXX.txt)
+
+    # Convert intro black screen to video segment
+    error_msg=$(ffmpeg -loop 1 -i "$temp_black" -t "$BLACK_INTRO_DURATION" -vf "scale=1920:1080" -c:v "$VIDEO_CODEC" -r "$FPS" -pix_fmt "$PIXEL_FORMAT" "$temp_black_intro_video" -y 2>&1)
+
+    if [ $? -ne 0 ]; then
+        echo -e "  ${RED}✗ Failed to create intro black screen segment${NC}"
+        echo -e "  ${YELLOW}Error: $(echo "$error_msg" | tail -n 3)${NC}"
+        FAILED=$((FAILED + 1))
+        rm -f "$temp_black" "$temp_black_intro_video" "$temp_image_video" "$temp_black_video" "$temp_concat_list"
+        continue
+    fi
 
     # Convert image to video segment
     error_msg=$(ffmpeg -loop 1 -i "$image_path" -t "$IMAGE_DURATION" -vf "scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2:black" -c:v "$VIDEO_CODEC" -r "$FPS" -pix_fmt "$PIXEL_FORMAT" "$temp_image_video" -y 2>&1)
@@ -145,28 +163,30 @@ for image_path in "${image_files[@]}"; do
         echo -e "  ${YELLOW}Image path: $image_path${NC}"
         echo -e "  ${YELLOW}Error: $(echo "$error_msg" | tail -n 3)${NC}"
         FAILED=$((FAILED + 1))
-        rm -f "$temp_black" "$temp_image_video" "$temp_black_video" "$temp_concat_list"
+        rm -f "$temp_black" "$temp_black_intro_video" "$temp_image_video" "$temp_black_video" "$temp_concat_list"
         continue
     fi
 
-    # Convert black screen to video segment
+    # Convert ending black screen to video segment
     error_msg=$(ffmpeg -loop 1 -i "$temp_black" -t "$BLACK_DURATION" -vf "scale=1920:1080" -c:v "$VIDEO_CODEC" -r "$FPS" -pix_fmt "$PIXEL_FORMAT" "$temp_black_video" -y 2>&1)
 
     if [ $? -ne 0 ]; then
-        echo -e "  ${RED}✗ Failed to create black screen segment${NC}"
+        echo -e "  ${RED}✗ Failed to create ending black screen segment${NC}"
         echo -e "  ${YELLOW}Error: $(echo "$error_msg" | tail -n 3)${NC}"
         FAILED=$((FAILED + 1))
-        rm -f "$temp_black" "$temp_image_video" "$temp_black_video" "$temp_concat_list"
+        rm -f "$temp_black" "$temp_black_intro_video" "$temp_image_video" "$temp_black_video" "$temp_concat_list"
         continue
     fi
 
     # Create concatenation list with absolute paths (safer for special characters)
+    temp_black_intro_video_abs=$(realpath "$temp_black_intro_video")
     temp_image_video_abs=$(realpath "$temp_image_video")
     temp_black_video_abs=$(realpath "$temp_black_video")
-    echo "file '$temp_image_video_abs'" > "$temp_concat_list"
+    echo "file '$temp_black_intro_video_abs'" > "$temp_concat_list"
+    echo "file '$temp_image_video_abs'" >> "$temp_concat_list"
     echo "file '$temp_black_video_abs'" >> "$temp_concat_list"
 
-    # Concatenate the two segments
+    # Concatenate the three segments
     error_msg=$(ffmpeg -f concat -safe 0 -i "$temp_concat_list" -c copy "$output_path" -y 2>&1)
 
     if [ $? -eq 0 ]; then
@@ -179,7 +199,7 @@ for image_path in "${image_files[@]}"; do
     fi
 
     # Clean up temporary files
-    rm -f "$temp_black" "$temp_image_video" "$temp_black_video" "$temp_concat_list"
+    rm -f "$temp_black" "$temp_black_intro_video" "$temp_image_video" "$temp_black_video" "$temp_concat_list"
 
 done
 
