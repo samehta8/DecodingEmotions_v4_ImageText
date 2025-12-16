@@ -123,7 +123,7 @@ scales:
   type: "slider"
   title: "Neutral"
   label_low: "Presence of other emotions"
-  label_high: "Absence of other emotions"
+  label_high: "No other emotions present"
   slider_min: 0
   slider_max: 100
   initial_state: "low"
