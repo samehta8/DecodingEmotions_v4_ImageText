@@ -43,17 +43,14 @@ groups:
 
 scales:
 - active: true
-  type: "slider"
-  title: "Angry"
+  type: "text"
+  title: "Emotions on display (Write multiple emotions, use any language (specify language)"
   label_low: ""
   label_high: ""
-  slider_min: 0
-  slider_max: 100
-  initial_state: "center"
-  required_to_proceed: false
+  required_to_proceed: true
   group: "emotions"
 
-- active: true
+- active: false
   type: "slider"
   title: "Happy"
   label_low: ""
@@ -64,7 +61,7 @@ scales:
   required_to_proceed: false
   group: "emotions"
 
-- active: true
+- active: false
   type: "slider"
   title: "Sad"
   label_low: ""
@@ -75,7 +72,7 @@ scales:
   required_to_proceed: false
   group: "emotions"
 
-- active: true
+- active: false
   type: "slider"
   title: "Scared"
   label_low: ""
@@ -86,7 +83,7 @@ scales:
   required_to_proceed: false
   group: "emotions"
 
-- active: true
+- active: false
   type: "slider"
   title: "Surprised"
   label_low: ""
@@ -97,7 +94,7 @@ scales:
   required_to_proceed: false
   group: "emotions"
 
-- active: true
+- active: false
   type: "slider"
   title: "Disgusted"
   label_low: ""
@@ -108,7 +105,7 @@ scales:
   required_to_proceed: false
   group: "emotions"
 
-- active: true
+- active: false
   type: "slider"
   title: "Contempt/Hate"
   label_low: ""
@@ -119,7 +116,7 @@ scales:
   required_to_proceed: false
   group: "emotions"
 
-- active: true
+- active: false
   type: "slider"
   title: "Neutral"
   label_low: "Presence of other emotions"
