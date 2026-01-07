@@ -303,7 +303,7 @@ def display_video_screen(action_id, video_filename, config):
     # Display video info
     current_index = st.session_state.get('current_video_index', 0) + 1
     total_videos = len(st.session_state.videos_to_rate)
-    st.info(f"🎬 **Video {current_index} of {total_videos}**. Watch the video carefully.")
+    #    st.info(f"🎬 **Video {current_index} of {total_videos}**. Watch the video carefully.")
 
     # Use shared display function in video-only mode
     display_video_rating_interface(
@@ -337,7 +337,7 @@ def display_rating_screen(action_id, video_filename, config):
     # Display rating info
     current_index = st.session_state.get('current_video_index', 0) + 1
     total_videos = len(st.session_state.videos_to_rate)
-    st.info(f"📊 **Rating {current_index} of {total_videos}**. Please rate the video you just watched.")
+    #    st.info(f"📊 **Rating {current_index} of {total_videos}**. Please rate the video you just watched.")
 
     # Use shared display function in rating-only mode
     scale_values = display_video_rating_interface(

@@ -300,7 +300,7 @@ def display_familiarization_video_screen(video_filename, config):
     # Display video info
     current_index = st.session_state.familiarization_video_index
     total_videos = len(st.session_state.familiarization_videos)
-    st.info(f"🎯 **Familiarization Trial - Video {current_index + 1} of {total_videos}**. Watch the video carefully.")
+    #    st.info(f"🎯 **Familiarization Trial - Video {current_index + 1} of {total_videos}**. Watch the video carefully.")
 
     # Define header content as a function
     def show_familiarization_header():
@@ -336,7 +336,7 @@ def display_familiarization_rating_screen(video_filename, config):
     # Display rating info
     current_index = st.session_state.familiarization_video_index
     total_videos = len(st.session_state.familiarization_videos)
-    st.info(f"📊 **Familiarization Trial - Rating {current_index + 1} of {total_videos}**. Please rate the video you just watched. *These ratings will not be saved.*")
+    #    st.info(f"📊 **Familiarization Trial - Rating {current_index + 1} of {total_videos}**. Please rate the video you just watched. *These ratings will not be saved.*")
 
     # Use shared display function in rating-only mode
     scale_values = display_video_rating_interface(
@@ -389,7 +389,7 @@ def display_familiarization_interface(video_filename, config):
     def show_familiarization_header():
         current_index = st.session_state.familiarization_video_index
         total_videos = len(st.session_state.familiarization_videos)
-        st.info(f"🎯 **Familiarization Trial** - **Video {current_index + 1} of {total_videos}**. These ratings will not be saved.")
+    #        st.info(f"🎯 **Familiarization Trial** - **Video {current_index + 1} of {total_videos}**. These ratings will not be saved.")
 
     # Use shared display function
     scale_values = display_video_rating_interface(
