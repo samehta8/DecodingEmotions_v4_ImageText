@@ -15,31 +15,11 @@ def show():
     """)
 
     st.info("""
-    1. What emotions are being shown by the athlete you just saw? You have to select the **appropriate emotions** from the given options:
-
-            Angry, Happy, Sad, Scared, Surprised, Disgusted, Contempt/Hate/Disdain, and Neutral.
+    1. What emotions are being shown by the athlete you just saw? You can write as many emotions you think you saw, separated by commas. 
     """)
     
     st.info("""
     2. Did the athlete **win or lose** the match/contest?
-    """)
-
-    st.markdown("""        
-    For each clip in the survey, please indicate whether the athlete won or lost, and rate the emotions you observe. 
-    
-    **You can pick multiple emotions (as many as you need). Each emotion is rated independently on a 0 to 100 scale. Each of these emotions has to be rated separately, they do not need to add up to 100.**
-    """)
-    
-    st.warning("""
-    **Neutral emotion is used when you do not see any specific emotion on the athlete.** 
-    
-    It can be used with other emotions but cannot be 100 if used with other emotions. 
-    
-    E.g. Surprised 30, Sad 20 and Neutral **20** is accepted, but Surprised 30 and Neutral 100 is not accepted. 
-    
-    **WHILE NEUTRAL CAN BE COMBINED WITH OTHER EMOTIONS, DO NOT SELECT NEUTRAL 100 IF OTHER EMOTIONS ARE PRESENT**
-    
-    Thus, Neutral would be 0 if other emotions are present, and 100 if no other emotions are visible or present according to you. Any score in between can be combined with other emotions.
     """)
 
     st.markdown("""
